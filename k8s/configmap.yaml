@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hr-copilot-config
+  namespace: enterprise-hr
+data:
+  APP_NAME: "Enterprise HR Policy Agentic RAG Copilot"
+  APP_ENV: "production"
+  PORT: "8080"
+  
+  # Vector Store Settings
+  PINECONE_INDEX_NAME: "fde-hr-policy-rag"
+  PINECONE_NAMESPACE: "company-hr-kb"
+  EMBEDDING_MODEL: "text-embedding-3-small"
+  TOP_K: "4"
+  MAX_RETRIES: "1"
+
+  # Model Gateway (LiteLLM)
+  LITELLM_MODEL: "gemini/gemini-2.5-flash"
+  LITELLM_FALLBACK_MODELS: '["groq/llama-3.3-70b-versatile", "gpt-4o-mini"]'
+  LITELLM_CACHE_ENABLED: "true"
+
+  # Security & Guardrails
+  PII_MASKING_ENABLED: "true"
+  GUARDRAILS_ENABLED: "true"
+  NEMOGUARDRAILS_ENABLED: "true"
+  CONFIDENTIAL_SALARY_MASKING: "true"
+
+  # Redis (Internal K8s Cluster Service)
+  REDIS_ENABLED: "true"
+  REDIS_URL: "redis://redis-service.enterprise-hr.svc.cluster.local:6379/0"
+  REDIS_CACHE_TTL_SECONDS: "3600"
+  REDIS_RATE_LIMIT_PER_MINUTE: "30"
+
+  # Observability
+  LANGCHAIN_TRACING_V2: "false"
+  LANGCHAIN_PROJECT: "enterprise-hr-policy-copilot"
+
+  # Identity & Access Control
+  KEYCLOAK_ENABLED: "false"
+  KEYCLOAK_SERVER_URL: "http://keycloak-service.enterprise-hr.svc.cluster.local:8080"
+  KEYCLOAK_REALM: "enterprise-hr"
+  KEYCLOAK_CLIENT_ID: "hr-copilot-client"

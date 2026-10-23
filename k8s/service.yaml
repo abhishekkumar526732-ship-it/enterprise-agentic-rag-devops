@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hr-copilot-service
+  namespace: enterprise-hr
+  labels:
+    app.kubernetes.io/name: hr-copilot
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: hr-copilot

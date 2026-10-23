@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hr-copilot-data-pvc
+  namespace: enterprise-hr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hr-copilot-deployment
+  namespace: enterprise-hr
+  labels:
+    app.kubernetes.io/name: hr-copilot
+    app.kubernetes.io/part-of: hr-agentic-rag
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: hr-copilot
+  template:
+    metadata:
+      labels:
+        app: hr-copilot
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: hr-copilot
+          # Replace with your Amazon ECR image URI e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/hr-copilot:latest
+          image: hr-copilot:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: hr-copilot-config
+            - secretRef:
+                name: hr-copilot-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1536Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          volumeMounts:
+            - name: persistent-data
+              mountPath: /app/data
+            - name: upload-data
+              mountPath: /app/uploads
+      volumes:
+        - name: persistent-data
+          persistentVolumeClaim:
+            claimName: hr-copilot-data-pvc
+        - name: upload-data
+          emptyDir: {}

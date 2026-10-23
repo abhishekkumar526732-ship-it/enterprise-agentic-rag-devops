@@ -1,0 +1,65 @@
+services:
+  # 1. Enterprise HR Agentic RAG FastAPI Application (Hardened Non-Root Container)
+  hr-copilot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hr_agentic_copilot_app
+    user: "1001:1001"
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_ENABLED=true
+      - KEYCLOAK_ENABLED=false # Set to true to enforce Keycloak JWT verification
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=enterprise-hr
+      - KEYCLOAK_CLIENT_ID=hr-copilot-client
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  # 2. Redis - Semantic Cache, Rate Limiter & Conversational Session Store
+  redis:
+    image: redis:7.2-alpine
+    container_name: hr_redis_cache
+    user: "redis:redis"
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # 3. Keycloak - Enterprise Identity & Access Control (OIDC / OAuth2)
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: hr_keycloak_iam
+    command: ["start-dev"]
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_PORT=8081
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+volumes:
+  redis_data:

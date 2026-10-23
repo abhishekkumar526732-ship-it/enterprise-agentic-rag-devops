@@ -10,71 +10,144 @@
   <div class="shell">
     <aside class="sidebar">
       <div>
-        <div class="brand-badge">FDE Project</div>
+        <div class="brand-badge">Enterprise Edition</div>
         <h1>HR Policy<br/>Agentic RAG</h1>
-        <p class="muted">Private company HR knowledge first. External web only when evidence is weak.</p>
+        <p class="muted">Grounded internal policy search with Guardrails, Presidio PII masking, LiteLLM Gateway, and Keycloak RBAC.</p>
       </div>
+
       <div class="workflow-card">
         <h3>LangGraph Workflow</h3>
-        <div class="flow-step">1. Route question</div>
-        <div class="flow-step">2. Retrieve private KB</div>
-        <div class="flow-step">3. Grade evidence</div>
-        <div class="flow-step">4. Web fallback if weak</div>
-        <div class="flow-step">5. Rewrite & retry</div>
-        <div class="flow-step">6. Grounded answer</div>
+        <div class="flow-step" id="step-guard">0. Guardrails & PII Inspection</div>
+        <div class="flow-step" id="step-route">1. Route Question</div>
+        <div class="flow-step" id="step-kb">2. Retrieve Private KB</div>
+        <div class="flow-step" id="step-grade">3. Grade Evidence Quality</div>
+        <div class="flow-step" id="step-web">4. Web Fallback (Tavily)</div>
+        <div class="flow-step" id="step-rewrite">5. Query Rewrite & Retry</div>
+        <div class="flow-step" id="step-gen">6. Grounded Answer</div>
       </div>
-      <button id="openUpload" class="secondary-btn">+ Add HR Document</button>
+
+      <div class="sidebar-buttons">
+        <button id="openUpload" class="secondary-btn">+ Ingest HR Document</button>
+        <button id="openAudit" class="secondary-btn">View Audit Logs</button>
+      </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
           <span class="status-dot"></span>
-          <span>Employee Knowledge Copilot</span>
+          <span>Employee Support Copilot</span>
         </div>
-        <span class="pill">Agentic RAG</span>
+        <div class="topbar-right">
+          <select id="modelSelector" class="secondary-btn" style="padding: 6px 10px; font-size: 12px; background: #16202c; border-color: #2b394c;">
+            <option value="gemini/gemini-2.5-flash">🌟 Gemini Flash (Google)</option>
+            <option value="groq/llama-3.3-70b-versatile">⚡ Groq LPU (Ultra-Fast)</option>
+            <option value="gpt-4o-mini">🤖 GPT-4o-mini (OpenAI)</option>
+          </select>
+          <span class="pill guard-active">🛡️ NeMo Guardrails</span>
+          <span class="pill">🔒 Presidio PII</span>
+          <span class="pill">⚡ Redis Cache</span>
+          <span class="pill">🧠 LangMem</span>
+          <span class="pill" id="userRoleBadge">Role: Employee</span>
+        </div>
       </header>
+
       <section id="chat" class="chat-area">
         <div class="message assistant">
           <div class="avatar">HR</div>
           <div class="bubble">
-            <strong>How can I help with HR policies or employee support?</strong>
-            <p>Try: “How many annual leave days do employees receive?” or ask something that may require current external employment information.</p>
+            <strong>Welcome to the Enterprise HR Policy & Employee Support Copilot.</strong>
+            <p>I can help answer questions regarding paid annual leave, sick leave, remote work guidelines, healthcare benefits, and corporate conduct policies.</p>
+            <p class="muted">All inquiries are protected by AI Safety Guardrails, Microsoft Presidio PII anonymization, and audited for enterprise compliance.</p>
           </div>
         </div>
       </section>
+
       <section class="composer-wrap">
         <div class="examples">
           <button class="example">How many annual leave days do employees receive?</button>
           <button class="example">What is our remote work policy?</button>
-          <button class="example">What are the latest public holiday rules in India?</button>
+          <button class="example">What are the latest public holiday rules in Bangladesh?</button>
+          <button class="example">Review salary for John at john.doe@company.com</button>
         </div>
         <form id="chatForm" class="composer">
-          <textarea id="question" rows="2" placeholder="Ask an HR policy or employee support question..." required></textarea>
+          <textarea id="question" rows="2" placeholder="Ask an enterprise HR policy or employee support question..." required></textarea>
           <button type="submit" class="send-btn">Ask Agent</button>
         </form>
       </section>
     </main>
+
     <aside class="trace-panel">
-      <h2>Agent Trace</h2>
-      <p class="muted">Watch LangGraph decisions while the request runs.</p>
-      <div id="trace" class="trace-list"><div class="empty">No request yet.</div></div>
-      <div class="source-box">
-        <span>Final Source</span>
-        <strong id="sourceUsed">—</strong>
+      <h2>Agent Observability</h2>
+      <p class="muted">Real-time LangGraph transitions, LiteLLM gateway costs, and safety decisions.</p>
+
+      <div id="trace" class="trace-list">
+        <div class="empty">No request yet. Ask a question to view execution traces.</div>
+      </div>
+
+      <div class="metrics-card">
+        <div class="metrics-row">
+          <span>Active Route</span>
+          <strong id="sourceUsed">—</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Query Cost</span>
+          <strong id="costDisplay">$0.000000</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Tokens Used</span>
+          <strong id="tokensDisplay">0</strong>
+        </div>
+        <div class="metrics-row">
+          <span>PII Masking</span>
+          <strong id="piiDisplay">None</strong>
+        </div>
       </div>
     </aside>
   </div>
+
+  <!-- Document Ingestion Modal -->
   <div id="uploadModal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-head"><h2>Ingest HR Document</h2><button id="closeUpload">×</button></div>
-      <p class="muted">Upload PDF, TXT, Markdown, or DOCX. The document is chunked, embedded, and indexed into Pinecone.</p>
-      <input id="adminKey" type="password" placeholder="Admin API key" />
+      <div class="modal-head">
+        <h2>Ingest HR Document</h2>
+        <button id="closeUpload">×</button>
+      </div>
+      <p class="muted">Upload PDF, TXT, Markdown, or DOCX policy files. Chunked and embedded into Pinecone.</p>
+      <input id="adminKey" type="password" placeholder="Admin API Key / Auth Key" />
       <input id="fileInput" type="file" accept=".pdf,.txt,.md,.docx" />
       <button id="uploadBtn" class="send-btn full">Index Document</button>
       <div id="uploadStatus" class="upload-status"></div>
     </div>
   </div>
+
+  <!-- Audit Log Modal -->
+  <div id="auditModal" class="modal hidden">
+    <div class="modal-card" style="width: min(800px, 95%);">
+      <div class="modal-head">
+        <h2>Governance & Compliance Audit Trail</h2>
+        <button id="closeAudit">×</button>
+      </div>
+      <p class="muted">Records all queries, user identity, sources chosen, LiteLLM costs, and safety traces.</p>
+      <div id="auditTableWrap" style="overflow-x: auto;">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Question</th>
+              <th>Source</th>
+              <th>Cost ($)</th>
+              <th>PII</th>
+            </tr>
+          </thead>
+          <tbody id="auditRows">
+            <tr><td colspan="5" style="text-align:center; color:#778598;">Loading audit records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -23,3 +23,13 @@ class AgentState(TypedDict):
     retry_count: int
     trace: List[str]
     citations: List[dict]
+    user_id: str
+    user_role: str
+    cost_usd: float
+    tokens_used: int
+    pii_detected: bool
+    pii_map: dict
+    guardrail_status: str
+    langsmith_run_id: str
+    model_used: str
+    user_memories: List[str]

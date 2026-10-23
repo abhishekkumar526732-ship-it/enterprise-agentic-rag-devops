@@ -1,14 +1,42 @@
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Version Control
 .git
 .gitignore
-.vscode
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-venv
-.venv
-env
-.pytest_cache
-tests
+.github
+
+# Python Bytecode & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Testing & Development Artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+test.py
+
+# Editor & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & Temporary Files
 *.log
+scratch/
+uploads/*
+data/*.db
+data/*.sqlite

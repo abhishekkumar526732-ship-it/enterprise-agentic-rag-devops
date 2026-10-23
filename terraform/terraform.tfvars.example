@@ -1,0 +1,20 @@
+# --- AWS EKS Terraform Variables Example ---
+# Rename or copy this file to 'terraform.tfvars' to customize your deployment
+
+aws_region   = "us-east-1"
+environment  = "production"
+cluster_name = "enterprise-hr-eks-cluster"
+
+# VPC Network Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnets_cidr  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnets_cidr = ["10.0.10.0/24", "10.0.11.0/24"]
+
+# Worker Node Sizing
+node_instance_types = ["t3.large"]
+desired_nodes       = 2
+min_nodes           = 2
+max_nodes           = 6
+
+# Container Registry
+ecr_repository_name = "enterprise-hr-copilot"
